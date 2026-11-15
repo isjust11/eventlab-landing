@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro, Lora } from 'next/font/google';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import PreviewProvider from '@/components/PreviewProvider';
+import Toaster from '@/components/Toaster';
 import './globals.css';
 
 const serif = Lora({
@@ -42,11 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={`${serif.variable} ${sans.variable}`}>
       <body>
-        <PreviewProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </PreviewProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

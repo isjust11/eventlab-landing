@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { LOGIN_URL, SIGN_UP_URL, startWithTemplateUrl } from '@/lib/config';
+import { DASHBOARD_URL, LOGIN_URL, SIGN_UP_URL, startWithTemplateUrl } from '@/lib/config';
+import { useSession } from '@/lib/auth';
 import Logo from './Logo';
 
 const NAV = [
@@ -20,6 +21,8 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [promo, setPromo] = useState(true);
+  const user = useSession();
+  const account = user ? { href: DASHBOARD_URL, label: 'Sự kiện của tôi' } : { href: LOGIN_URL, label: 'Đăng nhập' };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -40,12 +43,12 @@ export default function Header() {
             <span>
               <strong className="font-semibold text-gold-300">Miễn phí</strong> mẫu cơ bản trọn đời — tạo thiệp đầu tiên chỉ trong 10 phút
             </span>
-            <a
-              href={SIGN_UP_URL}
+            <Link
+              href={user ? startWithTemplateUrl() : SIGN_UP_URL}
               className="hidden shrink-0 rounded-full bg-gold-300 px-3 py-0.5 text-xs font-semibold text-wine-900 transition hover:bg-gold-200 sm:inline-block"
             >
-              Đăng ký ngay →
-            </a>
+              {user ? 'Tạo thiệp ngay →' : 'Đăng ký ngay →'}
+            </Link>
           </div>
           <button
             type="button"
@@ -75,12 +78,12 @@ export default function Header() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <a href={LOGIN_URL} className="text-sm font-medium opacity-80 transition hover:opacity-100">
-              Đăng nhập
-            </a>
-            <a href={startWithTemplateUrl()} className="btn-primary px-5 py-2.5">
+            <Link href={account.href} className="text-sm font-medium opacity-80 transition hover:opacity-100">
+              {account.label}
+            </Link>
+            <Link href={startWithTemplateUrl()} className="btn-primary px-5 py-2.5">
               Tạo thiệp
-            </a>
+            </Link>
           </div>
 
           <button
@@ -108,12 +111,12 @@ export default function Header() {
                 </Link>
               ))}
               <div className="flex gap-3 py-4">
-                <a href={LOGIN_URL} className="btn-outline flex-1">
-                  Đăng nhập
-                </a>
-                <a href={startWithTemplateUrl()} className="btn-primary flex-1">
+                <Link href={account.href} className="btn-outline flex-1">
+                  {account.label}
+                </Link>
+                <Link href={startWithTemplateUrl()} className="btn-primary flex-1">
                   Tạo thiệp
-                </a>
+                </Link>
               </div>
             </nav>
           </div>
