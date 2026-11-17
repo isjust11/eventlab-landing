@@ -93,7 +93,15 @@ function FieldInput({
           items={Array.isArray(value) ? (value as Record<string, unknown>[]) : []}
           fields={field.itemFields ?? []}
           onChange={onChange}
-          addLabel={field.group === 'gift' ? 'Thêm tài khoản' : 'Thêm mục'}
+          addLabel={
+            field.key === 'gifts'
+              ? 'Thêm tài khoản'
+              : field.key === 'story'
+                ? 'Thêm cột mốc'
+                : field.key === 'events'
+                  ? 'Thêm sự kiện'
+                  : 'Thêm mục'
+          }
         />
       );
     case 'url':

@@ -20,29 +20,7 @@ export const TYPE_LABELS: Record<TemplateType, string> = {
   OTHER: 'Khác',
 };
 
-/** Packages the invite host can demo from their own sample content before admin publishes them. */
-const BUILT_IN: TemplateCardData[] = [
-  {
-    name: 'Love Journey',
-    slug: 'wedding-love-journey',
-    type: 'WEDDING',
-    description: 'Tông xanh sage, hoa dại trắng và bướm bay; có album, video, hộp mừng cưới và sổ lời chúc.',
-    thumbnailUrl: '',
-    isPremium: false,
-    category: 'Botanical',
-  },
-  {
-    name: 'Editorial Ivory',
-    slug: 'wedding-invite-modern',
-    type: 'WEDDING',
-    description: 'Phong cách tạp chí ngà – mocha, cửa gỗ mở thiệp, hoa nhiều tầng chiều sâu.',
-    thumbnailUrl: '',
-    isPremium: true,
-    category: 'Editorial',
-  },
-];
-
-/** Published templates from the admin API, newest first; built-in demos fill in while the API is empty or offline. */
+/** Published templates from the admin API, newest first. */
 export async function getTemplates(): Promise<TemplateCardData[]> {
   let remote: TemplateCardData[] = [];
   try {
@@ -54,8 +32,7 @@ export async function getTemplates(): Promise<TemplateCardData[]> {
   } catch {
     remote = [];
   }
-  const known = new Set(remote.map((t) => t.slug));
-  return [...remote, ...BUILT_IN.filter((t) => !known.has(t.slug))];
+  return remote;
 }
 
 export async function getTemplate(slug: string): Promise<TemplateCardData | null> {

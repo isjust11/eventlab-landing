@@ -38,7 +38,7 @@ export function ScaledIframe({
           tabIndex={interactive ? 0 : -1}
           scrolling={interactive ? undefined : 'no'}
           aria-hidden={interactive ? undefined : true}
-          className="absolute left-0 top-0 origin-top-left border-0 bg-white"
+          className="absolute left-0 top-0 origin-top-left border-0 bg-white [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           style={{
             width: PHONE_W,
             height: PHONE_H,

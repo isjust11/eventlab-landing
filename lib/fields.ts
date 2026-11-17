@@ -66,7 +66,9 @@ const KNOWN: Record<
   album: { label: 'Album ảnh', group: 'media', kind: 'gallery' },
   gallery: { label: 'Album ảnh', group: 'media', kind: 'gallery' },
   videoUrl: { label: 'Video (YouTube)', group: 'media', kind: 'video', placeholder: 'https://www.youtube.com/watch?v=…' },
-  gifts: { label: 'Tài khoản mừng cưới', group: 'gift', kind: 'items' },
+  gifts: { label: 'Tài khoản mừng cưới', group: 'gift', kind: 'items', hint: 'Có thể kèm ảnh mã QR chuyển khoản.' },
+  story: { label: 'Chuyện tình', group: 'message', kind: 'items' },
+  events: { label: 'Lịch trình ngày cưới', group: 'time', kind: 'items' },
 };
 
 const ITEM_LABELS: Record<string, string> = {
@@ -75,18 +77,23 @@ const ITEM_LABELS: Record<string, string> = {
   bankName: 'Ngân hàng',
   accountNumber: 'Số tài khoản',
   qr: 'Mã QR',
-  qrImage: 'Mã QR',
+  qrImage: 'Mã QR chuyển khoản',
   qrUrl: 'Mã QR',
   title: 'Tiêu đề',
   name: 'Tên',
   role: 'Vai trò',
-  time: 'Thời gian',
-  date: 'Ngày',
+  label: 'Tên sự kiện',
+  time: 'Giờ',
+  date: 'Thời điểm',
+  dateDisplay: 'Ngày hiển thị',
   description: 'Mô tả',
   image: 'Ảnh',
   photo: 'Ảnh',
   url: 'Đường dẫn',
   caption: 'Chú thích',
+  venue: 'Địa điểm',
+  address: 'Địa chỉ',
+  mapsUrl: 'Link Google Maps',
 };
 
 const HIDDEN = new Set(['theme', 'locale', 'slug', 'templateId', 'footerCredit']);
@@ -177,31 +184,53 @@ function isIsoDate(v: unknown) {
   return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v);
 }
 
+type ItemMeta = { key: string; label?: string; type?: string };
+
+/** Admin stores itemSchema as a map; some seeds use an array. Slot props fill missing keys (e.g. qrImage). */
 function itemFieldsOf(sample: unknown, schema: unknown, slotProps?: Record<string, SlotProp>): ItemField[] {
-  const fromSchema = Array.isArray(schema)
-    ? (schema as Array<{ key?: string; fieldKey?: string; labelVi?: string; type?: string }>).map((s) => ({
-        key: String(s.key ?? s.fieldKey ?? ''),
-        label: s.labelVi,
-        type: s.type,
-      }))
-    : [];
-  const keys = fromSchema.length
-    ? fromSchema
-    : Object.keys(sample && typeof sample === 'object' ? (sample as object) : {}).map((key) => ({ key, label: undefined, type: undefined }));
-  return keys
-    .filter((k) => k.key && k.key !== 'side')
-    .map(({ key, label, type }) => ({
+  const metas: ItemMeta[] = [];
+  const seen = new Set<string>();
+
+  const push = (key: string, label?: string, type?: string) => {
+    if (!key || key === 'side' || seen.has(key)) return;
+    seen.add(key);
+    metas.push({ key, label, type });
+  };
+
+  if (schema && typeof schema === 'object' && !Array.isArray(schema)) {
+    for (const [key, sub] of Object.entries(schema as Record<string, { labelVi?: string; labelEn?: string; type?: string }>)) {
+      push(key, sub?.labelVi || sub?.labelEn, sub?.type);
+    }
+  } else if (Array.isArray(schema)) {
+    for (const s of schema as Array<{ key?: string; fieldKey?: string; labelVi?: string; type?: string }>) {
+      push(String(s.key ?? s.fieldKey ?? ''), s.labelVi, s.type);
+    }
+  }
+
+  for (const [key, prop] of Object.entries(slotProps ?? {})) {
+    push(key, undefined, prop.slot?.startsWith('image.') ? 'IMAGE' : prop.format === 'uri' ? 'URL' : undefined);
+  }
+
+  if (sample && typeof sample === 'object' && !Array.isArray(sample)) {
+    for (const key of Object.keys(sample as object)) push(key);
+  }
+
+  return metas.map(({ key, label, type }) => {
+    const t = String(type || '').toLowerCase();
+    const kind: ItemField['kind'] =
+      t === 'image' || IMAGE_KEY.test(key) || slotProps?.[key]?.slot?.startsWith('image.')
+        ? 'image'
+        : LONG_KEY.test(key) && key !== 'story'
+          ? 'textarea'
+          : /url|link|maps/i.test(key) || t === 'url'
+            ? 'url'
+            : 'text';
+    return {
       key,
       label: label || ITEM_LABELS[key] || humanize(key),
-      kind:
-        String(type).toLowerCase() === 'image' || IMAGE_KEY.test(key) || slotProps?.[key]?.slot?.startsWith('image.')
-          ? 'image'
-          : LONG_KEY.test(key)
-            ? 'textarea'
-            : /url|link/i.test(key)
-              ? 'url'
-              : 'text',
-    }));
+      kind,
+    };
+  });
 }
 
 function kindFromType(type: string | undefined): FieldKind | null {

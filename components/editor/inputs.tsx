@@ -213,12 +213,30 @@ export function ItemsInput({
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {fields.map((f) => {
-              const value = String(item[f.key] ?? '');
+              const raw = item[f.key];
+              const value =
+                typeof raw === 'string'
+                  ? raw
+                  : raw && typeof raw === 'object' && 'url' in (raw as object)
+                    ? String((raw as { url?: unknown }).url ?? '')
+                    : String(raw ?? '');
+              const isQr = /qr/i.test(f.key);
+
               if (f.kind === 'image') {
                 return (
-                  <div key={f.key} className="sm:col-span-2">
+                  <div key={f.key} className={isQr ? '' : 'sm:col-span-2'}>
                     <p className="mb-1.5 text-xs font-medium text-ink/60">{f.label}</p>
-                    <ImageInput compact value={value} onChange={(url) => set(i, f.key, url)} />
+                    <ImageInput
+                      compact={isQr}
+                      value={value}
+                      onChange={(url) => set(i, f.key, url)}
+                      label={isQr ? 'Tải ảnh QR' : 'Chọn ảnh'}
+                    />
+                    {isQr ? (
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-ink/45">
+                        Ảnh mã QR ngân hàng — khách quét để chuyển khoản.
+                      </p>
+                    ) : null}
                   </div>
                 );
               }
@@ -227,6 +245,20 @@ export function ItemsInput({
                   <label key={f.key} className="sm:col-span-2">
                     <span className="mb-1.5 block text-xs font-medium text-ink/60">{f.label}</span>
                     <Textarea rows={3} value={value} onChange={(e) => set(i, f.key, e.target.value)} />
+                  </label>
+                );
+              }
+              if (f.kind === 'url') {
+                return (
+                  <label key={f.key} className="sm:col-span-2">
+                    <span className="mb-1.5 block text-xs font-medium text-ink/60">{f.label}</span>
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://"
+                      value={value}
+                      onChange={(e) => set(i, f.key, e.target.value)}
+                    />
                   </label>
                 );
               }

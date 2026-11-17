@@ -6,6 +6,7 @@ export const INVITE_HOST_URL = trim(process.env.NEXT_PUBLIC_INVITE_HOST_URL || '
 
 export const BRAND = 'EventLab';
 
+/** Live preview of a catalog template (not a published event). */
 export function demoUrl(slug: string) {
   return `${INVITE_HOST_URL}/template/${encodeURIComponent(slug)}`;
 }
