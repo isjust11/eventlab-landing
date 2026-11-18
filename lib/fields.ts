@@ -347,6 +347,38 @@ export function templateTheme(schema: Record<string, unknown>) {
   return flattenTheme(schema.theme);
 }
 
+/**
+ * Mirrors `@eventlab/effects` catalog defaults so preview theme always carries explicit flags.
+ * (Landing does not depend on the effects package.)
+ */
+export const EFFECTS: Array<{ key: string; label: string; text: string; defaultOn: boolean }> = [
+  { key: 'effectEnvelope', label: 'Phong bì mở thiệp', text: 'Khách chạm để mở phong bì trước khi xem thiệp.', defaultOn: true },
+  { key: 'effectPetals', label: 'Cánh hoa rơi', text: 'Cánh hoa nhẹ nhàng rơi trên nền thiệp.', defaultOn: true },
+  { key: 'effectHearts', label: 'Trái tim bay', text: 'Những trái tim nhỏ bay lên khi mở thiệp.', defaultOn: true },
+  { key: 'effectConfetti', label: 'Pháo giấy', text: 'Pháo giấy chúc mừng lúc mở thiệp.', defaultOn: true },
+  { key: 'autoScroll', label: 'Tự cuộn chậm', text: 'Thiệp tự cuộn từ từ để khách ngắm trọn.', defaultOn: false },
+];
+
+/** Fill missing effect keys from catalog defaults (does not override explicit false/true). */
+export function withEffectDefaults(theme: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...theme };
+  for (const effect of EFFECTS) {
+    if (!(effect.key in out)) out[effect.key] = effect.defaultOn;
+  }
+  if (!('musicEnabled' in out)) out.musicEnabled = true;
+  return out;
+}
+
+/** Switch / preview: missing key follows catalog default (not Boolean(undefined) === false). */
+export function isEffectOn(theme: Record<string, unknown>, key: string, fallback = false): boolean {
+  if (key in theme) {
+    const v = theme[key];
+    return v === true || v === 'true' || v === 1 || v === '1';
+  }
+  const effect = EFFECTS.find((e) => e.key === key);
+  return effect ? effect.defaultOn : fallback;
+}
+
 /** Same shape the admin studio posts to the invite host's live preview. */
 export function toPreviewData(
   values: Record<string, unknown>,
@@ -360,14 +392,6 @@ export function toPreviewData(
     out[key] = isWrapped(raw) && raw.type ? { ...raw, value } : value;
   }
   for (const [key, value] of Object.entries(values)) if (!(key in out) && key !== 'theme') out[key] = value;
-  out.theme = { ...templateTheme(schema), ...themeOverrides };
+  out.theme = withEffectDefaults({ ...templateTheme(schema), ...themeOverrides });
   return out;
 }
-
-export const EFFECTS: Array<{ key: string; label: string; text: string }> = [
-  { key: 'effectEnvelope', label: 'Phong bì mở thiệp', text: 'Khách chạm để mở phong bì trước khi xem thiệp.' },
-  { key: 'effectPetals', label: 'Cánh hoa rơi', text: 'Cánh hoa nhẹ nhàng rơi trên nền thiệp.' },
-  { key: 'effectHearts', label: 'Trái tim bay', text: 'Những trái tim nhỏ bay lên khi mở thiệp.' },
-  { key: 'effectConfetti', label: 'Pháo giấy', text: 'Pháo giấy chúc mừng lúc mở thiệp.' },
-  { key: 'autoScroll', label: 'Tự cuộn chậm', text: 'Thiệp tự cuộn từ từ để khách ngắm trọn.' },
-];

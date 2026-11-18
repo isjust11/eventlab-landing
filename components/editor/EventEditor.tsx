@@ -24,9 +24,11 @@ import {
   galleryUrls,
   galleryValue,
   GROUPS,
+  isEffectOn,
   sampleValues,
   templateTheme,
   toPreviewData,
+  withEffectDefaults,
   type FieldDef,
 } from '@/lib/fields';
 import { fromLocalInput, toLocalInput } from '@/lib/format';
@@ -231,7 +233,7 @@ export default function EventEditor({ mode }: { mode: Mode }) {
           schema: schema.schema,
           fields,
           sample,
-          baseTheme: templateTheme(schema.schema),
+          baseTheme: withEffectDefaults(templateTheme(schema.schema)),
         });
         setValues(initialValues);
         setTheme(initialTheme);
@@ -366,7 +368,7 @@ export default function EventEditor({ mode }: { mode: Mode }) {
   }
 
   const groups = GROUPS.filter((g) => loaded.fields.some((f) => f.group === g.key));
-  const effects = EFFECTS.filter((e) => e.key in loaded.baseTheme);
+  const themeResolved = { ...loaded.baseTheme, ...theme };
   const saveState = saving
     ? 'Đang lưu…'
     : dirty
@@ -490,10 +492,10 @@ export default function EventEditor({ mode }: { mode: Mode }) {
                   label="Phát nhạc nền"
                   text="Nhạc bắt đầu khi khách chạm mở thiệp."
                 />
-                {effects.map((effect) => (
+                {EFFECTS.map((effect) => (
                   <Switch
                     key={effect.key}
-                    checked={Boolean(themeValue(effect.key))}
+                    checked={isEffectOn(themeResolved, effect.key)}
                     onChange={(v) => setThemeValue(effect.key, v)}
                     label={effect.label}
                     text={effect.text}
