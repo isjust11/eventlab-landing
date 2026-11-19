@@ -32,6 +32,12 @@ import {
   type FieldDef,
 } from '@/lib/fields';
 import { fromLocalInput, toLocalInput } from '@/lib/format';
+import {
+  matchThemePresetId,
+  THEME_COLOR_KEYS,
+  THEME_COLOR_PRESETS,
+  type ThemeColorTokens,
+} from '@/lib/theme-presets';
 import { AudioInput, GalleryInput, ImageInput, ItemsInput, LinesInput } from './inputs';
 import LivePreview from './LivePreview';
 
@@ -275,6 +281,28 @@ export default function EventEditor({ mode }: { mode: Mode }) {
     setDirty(true);
   };
 
+  const applyColorTokens = (colors: ThemeColorTokens) => {
+    setTheme((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(colors) as Array<keyof ThemeColorTokens>) {
+        const value = colors[key];
+        if (JSON.stringify(value) === JSON.stringify(loaded?.baseTheme[key])) delete next[key];
+        else next[key] = value;
+      }
+      return next;
+    });
+    setDirty(true);
+  };
+
+  const resetColorTokens = () => {
+    setTheme((prev) => {
+      const next = { ...prev };
+      for (const { key } of THEME_COLOR_KEYS) delete next[key];
+      return next;
+    });
+    setDirty(true);
+  };
+
   const groom = str(values.groomName).trim();
   const bride = str(values.brideName).trim();
   const isWedding = loaded?.templateSlug.startsWith('wedding') ?? false;
@@ -440,7 +468,11 @@ export default function EventEditor({ mode }: { mode: Mode }) {
           ) : null}
 
           <nav className="no-scrollbar sticky top-16 z-30 -mx-4 flex gap-2 overflow-x-auto bg-cream/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-            {[...groups.map((g) => ({ key: g.key, title: g.title })), { key: 'music', title: 'Nhạc & hiệu ứng' }].map((g) => (
+            {[
+              ...groups.map((g) => ({ key: g.key, title: g.title })),
+              { key: 'colors', title: 'Màu sắc' },
+              { key: 'music', title: 'Nhạc & hiệu ứng' },
+            ].map((g) => (
               <a
                 key={g.key}
                 href={`#sec-${g.key}`}
@@ -474,6 +506,68 @@ export default function EventEditor({ mode }: { mode: Mode }) {
                 </div>
               </section>
             ))}
+
+            <section id="sec-colors" className="scroll-mt-36 rounded-3xl border border-wine-900/5 bg-white p-5 shadow-card sm:p-7">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-serif text-2xl font-semibold">Màu sắc</h2>
+                  <p className="mt-1 text-sm text-ink/55">Chọn bảng màu có sẵn hoặc tinh chỉnh từng tông.</p>
+                </div>
+                <button type="button" onClick={resetColorTokens} className="text-xs font-semibold text-wine-700 hover:underline">
+                  Về màu mẫu gốc
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {THEME_COLOR_PRESETS.map((preset) => {
+                  const active = matchThemePresetId(themeResolved) === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => applyColorTokens(preset.colors)}
+                      className={`rounded-2xl border p-3 text-left transition ${
+                        active ? 'border-wine-500 bg-wine-50 ring-2 ring-wine-400/40' : 'border-wine-900/10 hover:border-wine-300'
+                      }`}
+                    >
+                      <span className="flex gap-1">
+                        {[preset.colors.accent, preset.colors.accentSoft, preset.colors.bg, preset.colors.ink].map((c) => (
+                          <span key={c} className="h-5 w-5 rounded-full border border-black/5" style={{ background: c }} />
+                        ))}
+                      </span>
+                      <span className="mt-2 block text-sm font-medium">{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {THEME_COLOR_KEYS.map(({ key, label }) => {
+                  const hex = str(themeValue(key)) || '#000000';
+                  return (
+                    <label key={key} className="flex items-center gap-3 rounded-2xl border border-wine-900/10 bg-cream/40 px-3 py-2.5">
+                      <input
+                        type="color"
+                        value={/^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#000000'}
+                        onChange={(e) => setThemeValue(key, e.target.value)}
+                        className="h-10 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                        aria-label={label}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">{label}</span>
+                        <span className="font-mono text-xs text-ink/45">{hex}</span>
+                      </span>
+                      <Input
+                        value={hex}
+                        onChange={(e) => setThemeValue(key, e.target.value)}
+                        className="w-[7.5rem] font-mono text-xs"
+                        aria-label={`${label} hex`}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
 
             <section id="sec-music" className="scroll-mt-36 rounded-3xl border border-wine-900/5 bg-white p-5 shadow-card sm:p-7">
               <h2 className="font-serif text-2xl font-semibold">Nhạc & hiệu ứng</h2>

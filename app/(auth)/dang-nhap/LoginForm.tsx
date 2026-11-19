@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { Field, Input, Spinner } from '@/components/ui';
 import { login, safeNext } from '@/lib/auth';
 
@@ -41,7 +42,11 @@ export default function LoginForm() {
         </p>
       ) : null}
 
-      <form onSubmit={submit} className="mt-8 space-y-5">
+      <div className="mt-8">
+        <SocialLoginButtons next={next} />
+      </div>
+
+      <form onSubmit={submit} className="space-y-5">
         <Field label="Email" htmlFor="email">
           <Input
             id="email"

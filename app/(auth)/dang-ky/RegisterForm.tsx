@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { ArrowLeft, MailCheck } from 'lucide-react';
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { Field, Input, Spinner } from '@/components/ui';
 import { toast } from '@/components/Toaster';
 import { login, register, resendPin, safeNext, verifyPin } from '@/lib/auth';
@@ -114,7 +115,11 @@ export default function RegisterForm() {
       <h1 className="font-serif text-3xl font-semibold">Tạo tài khoản miễn phí</h1>
       <p className="mt-2 text-ink/60">Chỉ mất một phút — sau đó bạn có thể tạo thiệp ngay.</p>
 
-      <form onSubmit={submit} className="mt-8 space-y-5">
+      <div className="mt-8">
+        <SocialLoginButtons next={next} />
+      </div>
+
+      <form onSubmit={submit} className="space-y-5">
         <Field label="Tên của bạn" htmlFor="fullName">
           <Input
             id="fullName"

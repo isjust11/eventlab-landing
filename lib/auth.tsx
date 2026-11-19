@@ -56,6 +56,37 @@ export async function login(username: string, password: string) {
   return tokens.user;
 }
 
+const OAUTH_NEXT_KEY = 'el_oauth_next';
+
+/** Remember where to send the user after Google/Facebook returns to `/success`. */
+export function rememberOAuthNext(next: string) {
+  try {
+    sessionStorage.setItem(OAUTH_NEXT_KEY, safeNext(next));
+  } catch {
+    /* private mode */
+  }
+}
+
+export function consumeOAuthNext() {
+  try {
+    const next = safeNext(sessionStorage.getItem(OAUTH_NEXT_KEY));
+    sessionStorage.removeItem(OAUTH_NEXT_KEY);
+    return next;
+  } catch {
+    return DASHBOARD_URL;
+  }
+}
+
+/** Exchange the short-lived OAuth temp token for a normal session. */
+export async function completeOAuth(tempToken: string) {
+  const tokens = await api<{ accessToken: string; refreshToken: string; user: SessionUser }>(
+    `/auth/token-info?token=${encodeURIComponent(tempToken)}`,
+    { auth: false },
+  );
+  session.save(tokens);
+  return tokens.user;
+}
+
 export type RegisterResult = { code: string; message: string };
 
 /** Accounts use the email as username so people only remember one thing. */

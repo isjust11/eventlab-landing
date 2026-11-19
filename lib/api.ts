@@ -131,3 +131,27 @@ export async function uploadFile(file: File): Promise<string> {
   const media = await api<{ url?: string; publicRelativePath?: string }>('/media/upload', { method: 'POST', body: form });
   return media.url || media.publicRelativePath || '';
 }
+
+export type MediaItem = {
+  id: number;
+  originalName?: string;
+  filename?: string;
+  mimeType?: string;
+  url?: string;
+  path?: string;
+  publicRelativePath?: string;
+  size?: number;
+  createdAt?: string;
+};
+
+export async function listMyMedia(mimeType?: 'audio' | 'image' | 'video'): Promise<MediaItem[]> {
+  const qs = mimeType ? `?mimeType=${encodeURIComponent(mimeType)}` : '';
+  const data = await api<MediaItem[] | { data?: MediaItem[] }>(`/media/mine${qs}`);
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.data)) return data.data;
+  return [];
+}
+
+export function mediaPublicUrl(item: MediaItem): string {
+  return item.url || item.path || item.publicRelativePath || '';
+}

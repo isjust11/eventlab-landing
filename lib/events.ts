@@ -42,10 +42,14 @@ export type Guest = {
   phone?: string | null;
   email?: string | null;
   group?: string | null;
+  source?: string | null;
+  extraData?: Record<string, unknown> | null;
   rsvpStatus: RsvpStatus;
   rsvpNote?: string | null;
   plusOnes?: number;
   viewedAt?: string | null;
+  respondedAt?: string | null;
+  sentAt?: string | null;
   invitationUrl?: string;
 };
 

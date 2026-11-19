@@ -48,6 +48,31 @@ import {
 } from '@/lib/events';
 import { countdownLabel, formatEventDate } from '@/lib/format';
 
+function formatGuestWhen(value?: string | null) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function guestPartySize(g: Guest) {
+  if (g.rsvpStatus === 'DECLINED' || g.rsvpStatus === 'PENDING') return null;
+  return 1 + Math.max(0, g.plusOnes || 0);
+}
+
+function guestSourceLabel(g: Guest) {
+  if (g.extraData?.via === 'public_rsvp_form') return 'RSVP từ thiệp';
+  if (g.source === 'IMPORT') return 'Import';
+  if (g.source === 'MANUAL') return 'Thêm tay';
+  return g.source || '';
+}
+
 const RSVP_TONE: Record<RsvpStatus, string> = {
   ATTENDING: 'bg-emerald-50 text-emerald-700',
   DECLINED: 'bg-rose-50 text-rose-700',
@@ -255,11 +280,17 @@ function GuestList({ eventId, guests, onChanged }: { eventId: string; guests: Gu
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return guests.filter(
-      (g) =>
-        (filter === 'ALL' || g.rsvpStatus === filter) &&
-        (!q || g.name.toLowerCase().includes(q) || (g.phone || '').includes(q) || (g.group || '').toLowerCase().includes(q)),
-    );
+    return guests.filter((g) => {
+      if (filter !== 'ALL' && g.rsvpStatus !== filter) return false;
+      if (!q) return true;
+      return (
+        g.name.toLowerCase().includes(q) ||
+        (g.phone || '').includes(q) ||
+        (g.email || '').toLowerCase().includes(q) ||
+        (g.group || '').toLowerCase().includes(q) ||
+        (g.rsvpNote || '').toLowerCase().includes(q)
+      );
+    });
   }, [guests, query, filter]);
 
   if (!guests.length) {
@@ -277,10 +308,15 @@ function GuestList({ eventId, guests, onChanged }: { eventId: string; guests: Gu
       <div className="flex flex-col gap-3 border-b border-wine-900/5 p-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/35" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên, số điện thoại, nhóm…" className="pl-11" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm theo tên, SĐT, email, nhóm, lời nhắn…"
+            className="pl-11"
+          />
         </div>
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-          {(['ALL', 'ATTENDING', 'DECLINED', 'PENDING'] as const).map((key) => (
+          {(['ALL', 'ATTENDING', 'DECLINED', 'PENDING', 'MAYBE'] as const).map((key) => (
             <button
               key={key}
               type="button"
@@ -295,50 +331,94 @@ function GuestList({ eventId, guests, onChanged }: { eventId: string; guests: Gu
         </div>
       </div>
       <ul className="divide-y divide-wine-900/5">
-        {shown.map((g) => (
-          <li key={g.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wine-50 font-serif text-wine-700">
-              {g.name.charAt(0).toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">
-                {g.name}
-                {g.plusOnes ? <span className="ml-1.5 text-xs text-ink/45">+{g.plusOnes}</span> : null}
-              </p>
-              <p className="truncate text-xs text-ink/50">{[g.group, g.phone].filter(Boolean).join(' · ') || 'Chưa có nhóm'}</p>
-            </div>
-            <span className={`hidden shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold sm:inline ${RSVP_TONE[g.rsvpStatus]}`}>
-              {RSVP_LABELS[g.rsvpStatus]}
-            </span>
-            {g.invitationUrl ? (
-              <button
-                type="button"
-                title="Sao chép link mời riêng"
-                aria-label={`Sao chép link mời riêng cho ${g.name}`}
-                onClick={async () => toast((await copyText(g.invitationUrl!)) ? `Đã chép link mời cho ${g.name}.` : 'Chưa sao chép được.')}
-                className="rounded-full p-2 text-ink/45 hover:bg-wine-50 hover:text-wine-700"
-              >
-                <Copy size={16} />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              aria-label={`Xoá ${g.name}`}
-              onClick={async () => {
-                if (!window.confirm(`Xoá ${g.name} khỏi danh sách khách mời?`)) return;
-                try {
-                  await deleteGuest(eventId, g.id);
-                  onChanged();
-                } catch (err) {
-                  toast(err instanceof Error ? err.message : 'Chưa xoá được.', 'error');
-                }
-              }}
-              className="rounded-full p-2 text-ink/35 hover:bg-rose-50 hover:text-rose-600"
-            >
-              <Trash2 size={16} />
-            </button>
-          </li>
-        ))}
+        {shown.map((g) => {
+          const party = guestPartySize(g);
+          const source = guestSourceLabel(g);
+          const meta = [g.group, g.phone, g.email].filter(Boolean);
+          return (
+            <li key={g.id} className="flex items-start gap-3 px-4 py-4 sm:px-5">
+              <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wine-50 font-serif text-wine-700">
+                {g.name.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-ink">{g.name}</p>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${RSVP_TONE[g.rsvpStatus]}`}>
+                    {RSVP_LABELS[g.rsvpStatus]}
+                  </span>
+                  {party != null ? (
+                    <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-[11px] font-semibold text-ink/65">
+                      {party} khách
+                      {g.plusOnes ? ` (+${g.plusOnes})` : ''}
+                    </span>
+                  ) : null}
+                  {source ? (
+                    <span className="rounded-full bg-wine-50 px-2.5 py-0.5 text-[11px] font-medium text-wine-700/80">
+                      {source}
+                    </span>
+                  ) : null}
+                </div>
+                {meta.length ? (
+                  <p className="truncate text-xs text-ink/50">{meta.join(' · ')}</p>
+                ) : (
+                  <p className="text-xs text-ink/40">Chưa có SĐT / email / nhóm</p>
+                )}
+                {g.rsvpNote ? (
+                  <p className="rounded-2xl bg-cream/80 px-3 py-2 text-sm leading-relaxed text-ink/75">
+                    <span className="mr-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink/40">
+                      Lời nhắn
+                    </span>
+                    {g.rsvpNote}
+                  </p>
+                ) : null}
+                <p className="text-[11px] text-ink/40">
+                  {[
+                    g.respondedAt ? `Phản hồi ${formatGuestWhen(g.respondedAt)}` : null,
+                    g.viewedAt ? `Đã xem ${formatGuestWhen(g.viewedAt)}` : null,
+                    !g.respondedAt && !g.viewedAt ? 'Chưa mở / chưa phản hồi' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                {g.invitationUrl ? (
+                  <button
+                    type="button"
+                    title="Sao chép link mời riêng"
+                    aria-label={`Sao chép link mời riêng cho ${g.name}`}
+                    onClick={async () =>
+                      toast(
+                        (await copyText(g.invitationUrl!))
+                          ? `Đã chép link mời cho ${g.name}.`
+                          : 'Chưa sao chép được.',
+                      )
+                    }
+                    className="rounded-full p-2 text-ink/45 hover:bg-wine-50 hover:text-wine-700"
+                  >
+                    <Copy size={16} />
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label={`Xoá ${g.name}`}
+                  onClick={async () => {
+                    if (!window.confirm(`Xoá ${g.name} khỏi danh sách khách mời?`)) return;
+                    try {
+                      await deleteGuest(eventId, g.id);
+                      onChanged();
+                    } catch (err) {
+                      toast(err instanceof Error ? err.message : 'Chưa xoá được.', 'error');
+                    }
+                  }}
+                  className="rounded-full p-2 text-ink/35 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </li>
+          );
+        })}
         {!shown.length ? <li className="px-5 py-10 text-center text-sm text-ink/50">Không có khách phù hợp.</li> : null}
       </ul>
     </div>
