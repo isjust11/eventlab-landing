@@ -566,7 +566,7 @@ export default function EventEditor({ mode }: { mode: Mode }) {
                         <span className="block text-sm font-medium">{label}</span>
                         <span className="font-mono text-xs text-ink/45">{hex}</span>
                       </span>
-                      <Input
+                      <input
                         type="text"
                         value={hex}
                         onChange={(e) => setThemeValue(key, e.target.value)}
