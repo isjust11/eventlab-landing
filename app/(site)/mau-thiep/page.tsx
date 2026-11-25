@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import TemplateGallery from '@/components/TemplateGallery';
-import { getTemplates, type TemplateType } from '@/lib/templates';
+import { getTemplateCategories, getTemplates } from '@/lib/templates';
 
 export const metadata: Metadata = {
   title: 'Mẫu thiệp online',
@@ -9,11 +9,14 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-const TYPES: TemplateType[] = ['WEDDING', 'BIRTHDAY', 'EVENT', 'OTHER'];
-
 export default async function TemplatesPage({ searchParams }: { searchParams: Promise<{ loai?: string }> }) {
-  const [templates, { loai }] = await Promise.all([getTemplates(), searchParams]);
-  const initial = TYPES.includes(loai as TemplateType) ? (loai as TemplateType) : 'ALL';
+  const [{ loai }, templates, categories] = await Promise.all([
+    searchParams,
+    getTemplates(),
+    getTemplateCategories(),
+  ]);
+  const codes = new Set(categories.map((c) => c.code));
+  const initial = loai && codes.has(loai) ? loai : 'ALL';
 
   return (
     <>
@@ -29,7 +32,13 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
       </section>
       <section className="pb-24 pt-6">
         <div className="container-x">
-          <TemplateGallery key={initial} templates={templates} searchable initialFilter={initial} />
+          <TemplateGallery
+            key={initial}
+            templates={templates}
+            categories={categories}
+            searchable
+            initialFilter={initial}
+          />
         </div>
       </section>
     </>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { ExternalLink, Loader2, X } from 'lucide-react';
 import { demoUrl, startWithTemplateUrl } from '@/lib/config';
-import { TYPE_LABELS, type TemplateCardData } from '@/lib/templates';
+import { typeLabel, type TemplateCardData } from '@/lib/templates';
 import PhoneFrame, { ScaledIframe } from './PhoneFrame';
 
 const PreviewContext = createContext<(template: TemplateCardData) => void>(() => {});
@@ -57,7 +57,7 @@ function PreviewModal({ template, onClose }: { template: TemplateCardData; onClo
         </PhoneFrame>
 
         <div className="hidden max-w-xs text-white md:block">
-          <p className="eyebrow">{TYPE_LABELS[template.type] ?? 'Mẫu thiệp'}</p>
+          <p className="eyebrow">{typeLabel(template.type)}</p>
           <h3 className="mt-3 font-serif text-4xl">{template.name}</h3>
           {template.description ? <p className="mt-4 leading-relaxed text-white/75">{template.description}</p> : null}
           <p className="mt-4 text-sm text-white/55">Cuộn và chạm trong khung để trải nghiệm như khách mời.</p>

@@ -3,11 +3,19 @@
 import Link from 'next/link';
 import { Crown, Eye } from 'lucide-react';
 import { startWithTemplateUrl } from '@/lib/config';
-import { TYPE_LABELS, type TemplateCardData } from '@/lib/templates';
+import { typeLabel, type TemplateCardData, type TemplateCategory } from '@/lib/templates';
 import { usePreview } from './PreviewProvider';
 import TemplateThumb from './TemplateThumb';
 
-export default function TemplateCard({ template, rank }: { template: TemplateCardData; rank?: number }) {
+export default function TemplateCard({
+  template,
+  rank,
+  categories,
+}: {
+  template: TemplateCardData;
+  rank?: number;
+  categories?: TemplateCategory[];
+}) {
   const preview = usePreview();
 
   return (
@@ -42,7 +50,7 @@ export default function TemplateCard({ template, rank }: { template: TemplateCar
       </div>
 
       <div className="mt-4 px-1">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold-500">{TYPE_LABELS[template.type] ?? 'Mẫu thiệp'}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold-500">{typeLabel(template.type, categories)}</p>
         <h3 className="mt-1 font-serif text-lg font-semibold text-ink">
           <Link href={`/mau-thiep/${template.slug}`} className="hover:text-wine-700">
             {template.name}

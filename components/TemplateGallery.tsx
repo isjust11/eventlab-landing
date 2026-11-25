@@ -2,26 +2,36 @@
 
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { TYPE_LABELS, type TemplateCardData, type TemplateType } from '@/lib/templates';
+import {
+  DEFAULT_TEMPLATE_CATEGORIES,
+  labelsFromCategories,
+  type TemplateCardData,
+  type TemplateCategory,
+} from '@/lib/templates';
 import TemplateCard from './TemplateCard';
 
-type Filter = 'ALL' | TemplateType;
+type Filter = 'ALL' | string;
 
 export default function TemplateGallery({
   templates,
+  categories = DEFAULT_TEMPLATE_CATEGORIES,
   searchable = false,
   limit,
   initialFilter = 'ALL',
 }: {
   templates: TemplateCardData[];
+  categories?: TemplateCategory[];
   searchable?: boolean;
   limit?: number;
   initialFilter?: Filter;
 }) {
+  const labels = useMemo(() => labelsFromCategories(categories), [categories]);
+
   const tabs = useMemo(() => {
     const present = new Set(templates.map((t) => t.type));
-    return (['ALL', 'WEDDING', 'BIRTHDAY', 'EVENT', 'OTHER'] as Filter[]).filter((f) => f === 'ALL' || present.has(f));
-  }, [templates]);
+    const fromCategories = categories.map((c) => c.code).filter((code) => present.has(code));
+    return (['ALL', ...fromCategories] as Filter[]);
+  }, [templates, categories]);
 
   const [filter, setFilter] = useState<Filter>(tabs.includes(initialFilter) ? initialFilter : 'ALL');
   const [query, setQuery] = useState('');
@@ -31,10 +41,14 @@ export default function TemplateGallery({
     const list = templates.filter(
       (t) =>
         (filter === 'ALL' || t.type === filter) &&
-        (!q || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)),
+        (!q ||
+          t.name.toLowerCase().includes(q) ||
+          t.category.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q) ||
+          (labels[t.type] || '').toLowerCase().includes(q)),
     );
     return limit ? list.slice(0, limit) : list;
-  }, [templates, filter, query, limit]);
+  }, [templates, filter, query, limit, labels]);
 
   return (
     <div>
@@ -52,7 +66,7 @@ export default function TemplateGallery({
                   filter === tab ? 'bg-wine-700 text-white' : 'bg-white text-ink/70 ring-1 ring-wine-900/10 hover:text-wine-700'
                 }`}
               >
-                {tab === 'ALL' ? 'Tất cả' : TYPE_LABELS[tab]}
+                {tab === 'ALL' ? 'Tất cả' : labels[tab] || tab}
               </button>
             ))}
           </div>
@@ -76,11 +90,11 @@ export default function TemplateGallery({
       {shown.length ? (
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
           {shown.map((template) => (
-            <TemplateCard key={template.slug} template={template} />
+            <TemplateCard key={template.slug} template={template} categories={categories} />
           ))}
         </div>
       ) : (
-        <p className="mt-16 text-center text-ink/55">Chưa có mẫu phù hợp — thử từ khoá khác nhé.</p>
+        <p className="mt-16 text-center text-sm text-ink/50">Chưa có mẫu nào khớp bộ lọc này.</p>
       )}
     </div>
   );

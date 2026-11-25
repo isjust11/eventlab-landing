@@ -5,7 +5,7 @@ import { ArrowLeft, Check, Crown, ExternalLink } from 'lucide-react';
 import PhoneFrame, { ScaledIframe } from '@/components/PhoneFrame';
 import TemplateCarousel from '@/components/TemplateCarousel';
 import { demoUrl, startWithTemplateUrl } from '@/lib/config';
-import { getTemplate, getTemplates, TYPE_LABELS } from '@/lib/templates';
+import { getTemplate, getTemplateCategories, getTemplates, typeLabel } from '@/lib/templates';
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -13,10 +13,10 @@ export const revalidate = 60;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const template = await getTemplate(slug);
+  const [template, categories] = await Promise.all([getTemplate(slug), getTemplateCategories()]);
   if (!template) return { title: 'Không tìm thấy mẫu' };
   return {
-    title: `${template.name} — ${TYPE_LABELS[template.type] ?? 'Mẫu thiệp'} online`,
+    title: `${template.name} — ${typeLabel(template.type, categories)} online`,
     description: template.description || `Xem thử mẫu ${template.name} và tạo thiệp của bạn trong vài phút.`,
     openGraph: template.thumbnailUrl ? { images: [template.thumbnailUrl] } : undefined,
   };
@@ -33,7 +33,11 @@ const INCLUDED = [
 
 export default async function TemplateDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const [template, all] = await Promise.all([getTemplate(slug), getTemplates()]);
+  const [template, all, categories] = await Promise.all([
+    getTemplate(slug),
+    getTemplates(),
+    getTemplateCategories(),
+  ]);
   if (!template) notFound();
   const related = all.filter((t) => t.slug !== slug && t.type === template.type).slice(0, 8);
 
@@ -53,7 +57,7 @@ export default async function TemplateDetailPage({ params }: PageProps) {
             </div>
 
             <div>
-              <p className="eyebrow">{TYPE_LABELS[template.type] ?? 'Mẫu thiệp'}</p>
+              <p className="eyebrow">{typeLabel(template.type, categories)}</p>
               <h1 className="mt-3 flex flex-wrap items-center gap-3 font-serif text-4xl font-semibold sm:text-5xl">
                 {template.name}
                 {template.isPremium ? (

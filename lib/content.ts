@@ -57,7 +57,7 @@ export const FAQS = [
   },
   {
     q: 'Tạo thiệp có mất phí không?',
-    a: 'Bạn có thể bắt đầu miễn phí với các mẫu cơ bản. Mẫu có nhãn Premium mở thêm hiệu ứng và tuỳ biến nâng cao.',
+    a: 'Bạn có thể bắt đầu miễn phí với các mẫu cơ bản. Xem chi tiết từng gói tại trang Bảng giá — nâng cấp khi cần mẫu Premium, nhạc và quản lý khách đầy đủ.',
   },
   {
     q: 'Có gửi qua Zalo, Facebook, Messenger được không?',

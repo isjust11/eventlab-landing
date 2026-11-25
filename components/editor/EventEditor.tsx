@@ -38,7 +38,8 @@ import {
   THEME_COLOR_PRESETS,
   type ThemeColorTokens,
 } from '@/lib/theme-presets';
-import { AudioInput, GalleryInput, ImageInput, ItemsInput, LinesInput } from './inputs';
+import EffectDemo from './EffectDemo';
+import { AudioInput, ColorsInput, GalleryInput, ImageInput, ItemsInput, LinesInput } from './inputs';
 import LivePreview from './LivePreview';
 
 type Mode = { kind: 'new'; slug: string } | { kind: 'edit'; id: string };
@@ -56,7 +57,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
 const isEmpty = (v: unknown) => v === undefined || v === null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length);
 
-const WIDE = new Set<FieldDef['kind']>(['textarea', 'image', 'gallery', 'lines', 'items']);
+const WIDE = new Set<FieldDef['kind']>(['textarea', 'image', 'gallery', 'lines', 'colors', 'items']);
 
 function FieldInput({
   field,
@@ -92,6 +93,14 @@ function FieldInput({
           id={field.key}
           lines={Array.isArray(value) ? value.map(String) : []}
           placeholder={Array.isArray(sample) ? sample.map(String).join('\n') : undefined}
+          onChange={onChange}
+        />
+      );
+    case 'colors':
+      return (
+        <ColorsInput
+          id={field.key}
+          colors={Array.isArray(value) ? value.map(String) : []}
           onChange={onChange}
         />
       );
@@ -558,9 +567,10 @@ export default function EventEditor({ mode }: { mode: Mode }) {
                         <span className="font-mono text-xs text-ink/45">{hex}</span>
                       </span>
                       <Input
+                        type="text"
                         value={hex}
                         onChange={(e) => setThemeValue(key, e.target.value)}
-                        className="w-[7.5rem] font-mono text-xs"
+                        className="w-[5.5rem] font-mono text-xs"
                         aria-label={`${label} hex`}
                       />
                     </label>
@@ -571,7 +581,7 @@ export default function EventEditor({ mode }: { mode: Mode }) {
 
             <section id="sec-music" className="scroll-mt-36 rounded-3xl border border-wine-900/5 bg-white p-5 shadow-card sm:p-7">
               <h2 className="font-serif text-2xl font-semibold">Nhạc & hiệu ứng</h2>
-              <p className="mt-1 text-sm text-ink/55">Thêm chút cảm xúc khi khách mở thiệp.</p>
+              <p className="mt-1 text-sm text-ink/55">Chọn nhạc có sẵn, tải bài của bạn, và xem thử hiệu ứng trước khi bật.</p>
               <div className="mt-6 space-y-3">
                 <AudioInput
                   value={str(themeValue('musicUrl'))}
@@ -586,14 +596,22 @@ export default function EventEditor({ mode }: { mode: Mode }) {
                   label="Phát nhạc nền"
                   text="Nhạc bắt đầu khi khách chạm mở thiệp."
                 />
+                <div className="pt-2">
+                  <h3 className="text-sm font-semibold text-ink/80">Hiệu ứng</h3>
+                  <p className="mt-0.5 text-xs text-ink/50">Bật/tắt từng hiệu ứng — nhấn “Xem thử” để xem demo ngay tại đây.</p>
+                </div>
                 {EFFECTS.map((effect) => (
-                  <Switch
-                    key={effect.key}
-                    checked={isEffectOn(themeResolved, effect.key)}
-                    onChange={(v) => setThemeValue(effect.key, v)}
-                    label={effect.label}
-                    text={effect.text}
-                  />
+                  <div key={effect.key}>
+                    <Switch
+                      checked={isEffectOn(themeResolved, effect.key)}
+                      onChange={(v) => setThemeValue(effect.key, v)}
+                      label={effect.label}
+                      text={effect.text}
+                    />
+                    <div className="px-1">
+                      <EffectDemo effectKey={effect.key} label={effect.label} />
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>

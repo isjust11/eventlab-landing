@@ -5,13 +5,20 @@ import TemplateCarousel from '@/components/TemplateCarousel';
 import TemplateGallery from '@/components/TemplateGallery';
 import { Benefits, Features, Showcase, Steps } from '@/components/Features';
 import { CtaBanner, Faq, Testimonials } from '@/components/Social';
+import Pricing from '@/components/Pricing';
 import { SectionHeading } from '@/components/Reveal';
-import { getTemplates } from '@/lib/templates';
+import { getPricingPlans, getRequestLocale } from '@/lib/plans';
+import { getTemplateCategories, getTemplates } from '@/lib/templates';
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const templates = await getTemplates();
+  const locale = await getRequestLocale();
+  const [templates, categories, plans] = await Promise.all([
+    getTemplates(),
+    getTemplateCategories(),
+    getPricingPlans(locale),
+  ]);
   const featured = templates.slice(0, 10);
   const showcaseSlug = templates.find((t) => !t.thumbnailUrl)?.slug ?? templates[0]?.slug;
 
@@ -41,7 +48,7 @@ export default async function HomePage() {
         <div className="container-x">
           <SectionHeading eyebrow="Mới cập nhật" title="Mẫu thiệp mới nhất" text="Lọc theo loại sự kiện và xem thử ngay trên khung điện thoại." />
           <div className="mt-12">
-            <TemplateGallery templates={templates} limit={8} />
+            <TemplateGallery templates={templates} categories={categories} limit={8} />
           </div>
           <div className="mt-12 text-center">
             <Link href="/mau-thiep" className="btn-primary px-8">
@@ -52,6 +59,7 @@ export default async function HomePage() {
       </section>
 
       <Benefits />
+      <Pricing plans={plans} />
       <Faq />
       <Testimonials />
       <CtaBanner />

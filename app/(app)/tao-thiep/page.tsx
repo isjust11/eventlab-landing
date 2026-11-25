@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import PreviewProvider from '@/components/PreviewProvider';
 import TemplateGallery from '@/components/TemplateGallery';
-import { getTemplates } from '@/lib/templates';
+import { getTemplateCategories, getTemplates } from '@/lib/templates';
 
 export const metadata: Metadata = { title: 'Chọn mẫu thiệp' };
 
 export const revalidate = 60;
 
 export default async function ChooseTemplatePage() {
-  const templates = await getTemplates();
+  const [templates, categories] = await Promise.all([getTemplates(), getTemplateCategories()]);
   return (
     <PreviewProvider>
       <div className="container-x py-10">
@@ -31,7 +31,7 @@ export default async function ChooseTemplatePage() {
           nhạc và hiệu ứng thoải mái.
         </p>
         <div className="mt-10">
-          <TemplateGallery templates={templates} searchable />
+          <TemplateGallery templates={templates} categories={categories} searchable />
         </div>
       </div>
     </PreviewProvider>

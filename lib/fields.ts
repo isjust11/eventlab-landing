@@ -3,7 +3,17 @@
  * Admin-authored labels win; otherwise labels and input kinds are inferred from the key and sample value.
  */
 
-export type FieldKind = 'text' | 'textarea' | 'datetime' | 'image' | 'gallery' | 'lines' | 'url' | 'video' | 'items';
+export type FieldKind =
+  | 'text'
+  | 'textarea'
+  | 'datetime'
+  | 'image'
+  | 'gallery'
+  | 'lines'
+  | 'colors'
+  | 'url'
+  | 'video'
+  | 'items';
 
 export type GroupKey = 'couple' | 'time' | 'message' | 'media' | 'gift' | 'other';
 
@@ -69,6 +79,18 @@ const KNOWN: Record<
   gifts: { label: 'Tài khoản mừng cưới', group: 'gift', kind: 'items', hint: 'Có thể kèm ảnh mã QR chuyển khoản.' },
   story: { label: 'Chuyện tình', group: 'message', kind: 'items' },
   events: { label: 'Lịch trình ngày cưới', group: 'time', kind: 'items' },
+  dressCodeNote: {
+    label: 'Ghi chú trang phục',
+    group: 'other',
+    kind: 'textarea',
+    placeholder: 'VD: Tông trung tính & đất — be, nâu mocha, xanh olive.',
+  },
+  dressCodeColors: {
+    label: 'Màu trang phục',
+    group: 'other',
+    kind: 'colors',
+    hint: 'Chọn bảng màu có sẵn hoặc bấm từng màu phổ biến.',
+  },
 };
 
 const ITEM_LABELS: Record<string, string> = {
@@ -254,6 +276,7 @@ function inferKind(key: string, value: unknown): FieldKind {
   if (Array.isArray(value)) {
     if (value.length && typeof value[0] === 'object') return 'items';
     if (GALLERY_KEY.test(key) || value.some((v) => typeof v === 'string' && IMAGE_URL.test(v))) return 'gallery';
+    if (/color|swatch|dresscode/i.test(key)) return 'colors';
     return 'lines';
   }
   if (/date|time/i.test(key) && isIsoDate(value)) return 'datetime';
@@ -270,6 +293,7 @@ function groupOf(key: string, kind: FieldKind): GroupKey {
   if (/gift|bank|account/i.test(key)) return 'gift';
   if (kind === 'image' || kind === 'gallery' || kind === 'video') return 'media';
   if (kind === 'textarea' || kind === 'lines') return 'message';
+  if (kind === 'colors' || /dresscode|color/i.test(key)) return 'other';
   return 'other';
 }
 
@@ -287,7 +311,11 @@ export function buildFields(
       const slot = slots[key];
       const kind = known?.kind ?? kindFromType(meta.type) ?? kindFromSlot(slot) ?? inferKind(key, value);
       const finalKind: FieldKind =
-        kind === 'items' && Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === 'string') ? 'lines' : kind;
+        kind === 'colors'
+          ? 'colors'
+          : kind === 'items' && Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === 'string')
+            ? 'lines'
+            : kind;
       const itemSample = Array.isArray(value) && value[0] && typeof value[0] === 'object' ? value[0] : slot?.items?.properties ?? null;
       return {
         key,

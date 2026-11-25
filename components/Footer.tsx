@@ -1,30 +1,37 @@
 import Link from 'next/link';
 import { Facebook, Mail, Phone, Youtube } from 'lucide-react';
 import { LOGIN_URL, SIGN_UP_URL } from '@/lib/config';
+import { getTemplateCategories } from '@/lib/templates';
 import Logo from './Logo';
 
-const COLUMNS = [
-  {
-    title: 'Mẫu thiệp',
-    links: [
-      { label: 'Tất cả mẫu', href: '/mau-thiep' },
-      { label: 'Thiệp cưới', href: '/mau-thiep?loai=WEDDING' },
-      { label: 'Thiệp sinh nhật', href: '/mau-thiep?loai=BIRTHDAY' },
-      { label: 'Thiệp sự kiện', href: '/mau-thiep?loai=EVENT' },
-    ],
-  },
-  {
-    title: 'Hỗ trợ',
-    links: [
-      { label: 'Cách tạo thiệp', href: '/#cach-tao' },
-      { label: 'Câu hỏi thường gặp', href: '/#hoi-dap' },
-      { label: 'Đăng nhập', href: LOGIN_URL },
-      { label: 'Đăng ký', href: SIGN_UP_URL },
-    ],
-  },
-];
+export default async function Footer() {
+  const categories = await getTemplateCategories();
+  const columns = [
+    {
+      title: 'Mẫu thiệp',
+      links: [
+        { label: 'Tất cả mẫu', href: '/mau-thiep' },
+        ...categories
+          .filter((c) => c.code !== 'OTHER')
+          .slice(0, 4)
+          .map((c) => ({
+            label: c.name,
+            href: `/mau-thiep?loai=${encodeURIComponent(c.code)}`,
+          })),
+      ],
+    },
+    {
+      title: 'Hỗ trợ',
+      links: [
+        { label: 'Bảng giá', href: '/bang-gia' },
+        { label: 'Cách tạo thiệp', href: '/#cach-tao' },
+        { label: 'Câu hỏi thường gặp', href: '/#hoi-dap' },
+        { label: 'Đăng nhập', href: LOGIN_URL },
+        { label: 'Đăng ký', href: SIGN_UP_URL },
+      ],
+    },
+  ];
 
-export default function Footer() {
   return (
     <footer className="border-t border-wine-900/10 bg-white">
       <div className="container-x grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
@@ -49,7 +56,7 @@ export default function Footer() {
             ))}
           </div>
         </div>
-        {COLUMNS.map((col) => (
+        {columns.map((col) => (
           <div key={col.title}>
             <h3 className="font-serif text-lg font-semibold">{col.title}</h3>
             <ul className="mt-4 space-y-3 text-sm text-ink/65">
